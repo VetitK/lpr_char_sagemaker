@@ -31,6 +31,7 @@ def transform_fn(model, payload, request_content_type, response_content_type):
         [
             transforms.Resize((48,36)),
             transforms.ToTensor(),
+            transforms.Grayscale(num_output_channels=3),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ]
     )
