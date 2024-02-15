@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thai Character Classifier</title>
+</head>
+
+<body>
+    <canvas id="drawingCanvas" width="72" height="96"
+        style="background-color: white; border:3px solid #000;"></canvas><br>
+    <button onclick="classifyCharacter()">Classify</button>
+    <div id="classificationResult"></div>
+
+    <script>
+        var canvas = document.getElementById('drawingCanvas');
+        var ctx = canvas.getContext('2d');
+        ctx.lineWidth = 6;
+
+        var mouse = { x: 0, y: 0 };
+
+        canvas.addEventListener('mousemove', function (e) {
+            mouse.x = e.pageX - this.offsetLeft;
+            mouse.y = e.pageY - this.offsetTop;
+        }, false);
+
+        canvas.addEventListener('mousedown', function () {
+            ctx.beginPath();
+            ctx.moveTo(mouse.x, mouse.y);
+
+            canvas.addEventListener('mousemove', onPaint, false);
+        }, false);
+
+        canvas.addEventListener('mouseup', function () {
+            canvas.removeEventListener('mousemove', onPaint, false);
+        }, false);
+
+        var onPaint = function () {
+            ctx.lineTo(mouse.x, mouse.y);
+            ctx.stroke();
+        };
+
+        function classifyCharacter() {
+            var imageData = canvas.toDataURL(); // Convert canvas to base64 image data
+            imageData = imageData.replace(/^data:image\/(png|jpg);base64,/, ''); // Remove data URL prefix
+
+            // Send image data to backend for classification using AJAX
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', 'http://127.0.0.1:5000/classify', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    // var decodedText = JSON.parse('"\\' + xhr.responseText + '"');
+                    var res = xhr.responseText;
+                    var jsonData = JSON.parse(res);
+                    var decodedResult = JSON.parse('"' + jsonData.result + '"');
+                    var newJsonString = '{"result": "' + decodedResult + '", "prob": "' + jsonData.prob + '"}';
+                    document.getElementById('classificationResult').innerText = newJsonString;
+                } else {
+                    console.error('Error:', xhr.statusText);
+                }
+            };
+            xhr.onerror = function () {
+                console.error('Network Error');
+            };
+            xhr.send(JSON.stringify({ image_data: imageData }));
+        }
+    </script>
+</body>
+
+</html>
